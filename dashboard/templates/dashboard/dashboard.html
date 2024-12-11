@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloomSight</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Shadows+Into+Light&display=swap" rel="stylesheet">
+    <style>
+        /* General layout and styling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f0f0;
+            color: #4f4a4a;
+        }
+
+        h1 {
+            font-family: 'Shadows Into Light', cursive;
+            color: #a157a4;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            margin-top: 50px;
+            background-color: #202020;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px; /* Limit the width for larger screens */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #cameraContainer {
+            position: relative;
+            width: 100%;
+            height: 480px;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            border: 3px solid #a157a4;
+            overflow: hidden;
+        }
+
+        #camera {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 10px;
+        }
+
+        #capturedImage {
+            display: none;
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+
+        /* Buttons Container */
+        #captureButtonsContainer {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 20px; /* Space between camera and buttons */
+        }
+
+        #captureButtonsContainer button {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+            flex-grow: 1; /* Make buttons take equal space */
+        }
+
+        #captureButtonsContainer button:hover {
+            transform: scale(1.05);
+            background-color: #d3a4e7;
+        }
+
+        .file-input-container {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .alert {
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        /* Floral colors and style */
+        .btn-success {
+            background-color: #a157a4;
+            border-color: #a157a4;
+        }
+
+        .btn-success:hover {
+            background-color: #86257a;
+            border-color: #86257a;
+        }
+
+        .btn-primary {
+            background-color: #ff9a8b;
+            border-color: #ff9a8b;
+        }
+
+        .btn-primary:hover {
+            background-color: #ff6b6b;
+            border-color: #ff6b6b;
+        }
+
+        .btn-danger {
+            background-color: #f28ab2;
+            border-color: #f28ab2;
+        }
+
+        .btn-danger:hover {
+            background-color: #d17a98;
+            border-color: #d17a98;
+        }
+
+        .btn-info {
+            background-color: #9fe6a0;
+            border-color: #9fe6a0;
+        }
+
+        .btn-info:hover {
+            background-color: #72d67d;
+            border-color: #72d67d;
+        }
+
+        .btn-warning {
+            background-color: #ffec8b;
+            border-color: #ffec8b;
+        }
+
+        .btn-warning:hover {
+            background-color: #ffcd56;
+            border-color: #ffcd56;
+        }
+
+        @media (max-width: 767px) {
+            /* Make buttons and layout more compact for small screens */
+            #captureButtonsContainer button {
+                padding: 8px 20px;
+                font-size: 14px;
+            }
+
+            #cameraContainer {
+                height: 300px; /* Adjust camera container height for small screens */
+            }
+
+            /* Stack the buttons vertically on smaller screens */
+            #captureButtonsContainer {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-center">BloomSight</h1>
+
+        <!-- Camera Container -->
+        <div id="cameraContainer">
+            <video id="camera" class="w-100" height="480" autoplay style="display:none;"></video>
+            <img id="capturedImage" src="" alt="Captured Image" style="display:none;" />
+        </div>
+
+        <!-- Buttons Container -->
+        <div id="captureButtonsContainer">
+            <button id="capture" class="btn btn-success" onclick="toggleCamera()">Start Camera</button>
+            <button id="captureImage" class="btn btn-primary" onclick="captureImage()" style="display:none;">Capture Image</button>
+            <button id="offCameraButton" class="btn btn-danger" onclick="stopCamera()" style="display:none;">Turn Off Camera</button>
+            <button id="uploadImageButton" class="btn btn-info" onclick="triggerFileInput()">Upload Image</button>
+            <button id="reCaptureButton" class="btn btn-warning" onclick="reCaptureImage()" style="display:none;">Re-Capture Image</button>
+        </div>
+
+        <!-- File Input for Image Upload -->
+        <div class="file-input-container" id="fileInputContainer">
+            <input type="file" id="imageUpload" name="imageUpload" accept="image/*" class="form-control w-75 mx-auto" onchange="uploadImage()">
+        </div>
+
+        <!-- Error/Success Messages -->
+        <div id="alertMessages"></div>
+    </div>
+
+    <!-- Bootstrap JS & Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        const camera = document.getElementById('camera');
+        const captureButton = document.getElementById('capture');
+        const captureImageButton = document.getElementById('captureImage');
+        const capturedImage = document.getElementById('capturedImage');
+        const uploadImageButton = document.getElementById('uploadImageButton');
+        const offCameraButton = document.getElementById('offCameraButton');
+        const reCaptureButton = document.getElementById('reCaptureButton');
+        const fileInputContainer = document.getElementById('fileInputContainer');
+        const imageUpload = document.getElementById('imageUpload');
+        const alertMessages = document.getElementById('alertMessages');
+
+        let cameraStream;
+
+        // Toggle camera on and off
+        async function toggleCamera() {
+            if (camera.style.display === 'none') {
+                // Hide any captured image if camera is turned on
+                capturedImage.style.display = 'none';
+                await startCamera();
+                captureButton.style.display = 'none';
+                captureImageButton.style.display = 'block';
+                offCameraButton.style.display = 'block'; // Show "Turn Off Camera" button
+                reCaptureButton.style.display = 'none'; // Hide Re-Capture button when camera is on
+            } else {
+                stopCamera();
+                captureButton.style.display = 'block'; // Show "Start Camera" button
+                captureImageButton.style.display = 'none'; // Hide "Capture Image" button
+                offCameraButton.style.display = 'none'; // Hide "Turn Off Camera" button
+                reCaptureButton.style.display = 'none'; // Hide Re-Capture button when camera is off
+            }
+        }
+
+        // Start camera
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                camera.srcObject = cameraStream;
+                camera.style.display = 'block';
+            } catch (err) {
+                showAlert('Error accessing the camera. Please make sure your webcam is working.', 'danger');
+            }
+        }
+
+        // Stop camera
+        function stopCamera() {
+            if (cameraStream) {
+                const tracks = cameraStream.getTracks();
+                tracks.forEach(track => track.stop()); // Stop all tracks
+                cameraStream = null; // Clear the camera stream
+            }
+            camera.style.display = 'none'; // Hide camera
+            captureImageButton.style.display = 'none'; // Hide "Capture Image" button
+            offCameraButton.style.display = 'none'; // Hide "Turn Off Camera" button
+        }
+
+        // Capture image from camera
+        function captureImage() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = camera.videoWidth;
+            canvas.height = camera.videoHeight;
+            context.drawImage(camera, 0, 0, canvas.width, canvas.height);
+            const imageData = canvas.toDataURL('image/png');
+            capturedImage.src = imageData;
+            capturedImage.style.display = 'block';
+            camera.style.display = 'none'; // Hide camera after capturing
+            captureImageButton.style.display = 'none'; // Hide capture button after capturing
+            offCameraButton.style.display = 'block'; // Show "Turn Off Camera" button after capture
+            reCaptureButton.style.display = 'block'; // Show "Re-Capture Image" button after capture
+        }
+
+        // Re-Capture Image
+        function reCaptureImage() {
+            capturedImage.style.display = 'none'; // Hide the captured image
+            startCamera(); // Restart the camera
+            captureImageButton.style.display = 'block'; // Show the capture button
+            offCameraButton.style.display = 'block'; // Show the "Turn Off Camera" button
+            reCaptureButton.style.display = 'none'; // Hide the "Re-Capture Image" button
+        }
+
+        // Trigger file input on button click
+        function triggerFileInput() {
+            imageUpload.click(); // Simulate a click on the file input when the "Upload Image" button is clicked
+        }
+
+        // Upload image and show it in the camera container after selecting file
+        function uploadImage() {
+            const file = imageUpload.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    capturedImage.src = e.target.result;
+                    capturedImage.style.display = 'block'; // Show uploaded image in the container
+                    // Stop the camera if it's on
+                    if (camera.style.display !== 'none') {
+                        stopCamera();
+                        captureButton.style.display = 'block';
+                        captureImageButton.style.display = 'none';
+                        offCameraButton.style.display = 'none'; // Hide "Turn Off Camera" button
+                        reCaptureButton.style.display = 'block'; // Show "Re-Capture Image" button
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                showAlert("Please choose an image first.", "danger");
+            }
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.classList.add('alert', `alert-${type}`);
+            alert.innerText = message;
+            alertMessages.innerHTML = ''; // Clear previous messages
+            alertMessages.appendChild(alert);
+        }
+    </script>
+</body>
+
+</html>
